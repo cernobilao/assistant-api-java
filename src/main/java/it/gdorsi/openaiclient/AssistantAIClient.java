@@ -1,13 +1,16 @@
 package it.gdorsi.openaiclient;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
+import java.util.List;
 import java.util.Properties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gdorsi.openaiclient.dto.*;
+import it.gdorsi.openaiclient.model.ListAssistantsParams;
 
 import static it.gdorsi.openaiclient.model.GPTModel.GPT3_5_TURBO;
 
@@ -41,6 +44,25 @@ public class AssistantAIClient {
         AssistantRequestDTO dto = new AssistantRequestDTO(GPT3_5_TURBO.getName(), initialPrompt);
         String response = post(assistantsUrl, dto);
         return objectMapper.readValue(response, AssistantResponseDTO.class);
+    }
+    public List<AssistantResponseDTO> listAssistants() throws Exception {
+        return listAssistants(assistantsUrl);
+    }
+    public List<AssistantResponseDTO> listAssistants(ListAssistantsParams listAssistantsParams) throws Exception {
+        StringBuilder urlBuilder = new StringBuilder(assistantsUrl).append("?");
+        listAssistantsParams.order().ifPresent(order -> urlBuilder.append("order=").append(order).append("&"));
+        listAssistantsParams.limit().ifPresent(limit -> urlBuilder.append("limit=").append(limit).append("&"));
+        listAssistantsParams.after().ifPresent(after -> urlBuilder.append("after=").append(after).append("&"));
+        listAssistantsParams.before().ifPresent(before -> urlBuilder.append("before=").append(before));
+        String url = urlBuilder.toString();
+        return listAssistants(url);
+    }
+    private List<AssistantResponseDTO> listAssistants(String url) throws IOException, InterruptedException {
+        HttpRequest request = getRequestWithHeaders(url).GET().build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        AssistantListResponseDTO assistantsList = objectMapper.readValue(response.body(),
+                AssistantListResponseDTO.class);
+        return assistantsList.data();
     }
 
     public ThreadResponseDTO createThread() throws Exception {

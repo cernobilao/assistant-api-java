@@ -1,6 +1,8 @@
 package it.gdorsi.openaiclient;
 
 import it.gdorsi.openaiclient.dto.*;
+import it.gdorsi.openaiclient.model.ListAssistantsParams;
+import it.gdorsi.openaiclient.model.ListOrder;
 
 import java.io.InputStream;
 import java.util.List;
@@ -25,6 +27,13 @@ public class Main {
 
             AssistantAIClient client = new AssistantAIClient(properties);
             AssistantResponseDTO assistant = client.createAssistant(properties.getProperty("openai.assistant.instructions"));
+
+            System.out.println("Available assistants: ");
+            ListAssistantsParams listAssistantsParams = new ListAssistantsParams(Optional.empty(),
+                    Optional.of(ListOrder.ASC), Optional.empty(), Optional.empty());
+            client.listAssistants(listAssistantsParams).forEach(assistantResponseDTO -> System.out.println(
+                    "Assistant: " + assistantResponseDTO.name() + " id: " + assistantResponseDTO.id()));
+
             ThreadResponseDTO thread = client.createThread();
             client.sendMessage(thread.id(), "user", properties.getProperty("openai.user.prompt"));
             RunResponseDTO run = client.runMessage(thread.id(), assistant.id());
